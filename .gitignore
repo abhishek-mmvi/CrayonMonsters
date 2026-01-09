@@ -1,0 +1,12 @@
+# Large datasets (do NOT upload)
+*.npy
+*.npz
+data/
+dataset/
+ImagePredictor/*.npy
+ImagePredictor/*.npz
+
+# Python cache
+__pycache__/
+*.pyc
+
