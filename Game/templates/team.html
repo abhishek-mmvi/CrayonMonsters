@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrayonMonsters - Your Team</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .creature-preview {
+            background: #fff;
+        }
+
+        .creature-image {
+            width: 100%;
+            height: 150px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-bottom: 4px solid var(--border-dark);
+        }
+
+        .creature-image img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .creature-info {
+            padding: 12px;
+        }
+
+        .moves-compact {
+            font-size: 8px;
+            margin-top: 8px;
+        }
+
+        .move-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px;
+            background: var(--bg-panel);
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Your Team</h1>
+
+        <div id="teamContainer" class="team-grid mb-2">
+            <div class="panel pixel-border text-center">
+                <p>Loading team...</p>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button class="btn btn-primary" onclick="goToBattle()" style="font-size: 14px; padding: 16px 32px;">
+                Ready to Battle!
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const gameId = "{{ game_id }}";
+        const socket = io();
+
+        socket.on('connect', () => {
+            socket.emit('join_game', { game_id: gameId });
+            socket.emit('get_team', { game_id: gameId });
+        });
+
+        socket.on('team_data', (data) => {
+            const container = document.getElementById('teamContainer');
+
+            container.innerHTML = data.creatures.map((c, i) => {
+                const stats = c.stats || {};
+                const nature = stats.nature || 'normal';
+
+                return `
+                    <div class="creature-preview panel pixel-border">
+                        <div class="creature-image">
+                            ${c.original_image ?
+                        `<img src="${c.original_image}" alt="${c.name}">` :
+                        '<span>No Image</span>'}
+                        </div>
+                        <div class="creature-info">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="creature-name">${c.name}</span>
+                                <span class="nature-badge nature-${nature}">${nature}</span>
+                            </div>
+                            
+                            <div class="stats-grid">
+                                <div class="stat-item"><span>HP</span><span>${stats.hp || 0}</span></div>
+                                <div class="stat-item"><span>ATK</span><span>${stats.attack || 0}</span></div>
+                                <div class="stat-item"><span>DEF</span><span>${stats.defense || 0}</span></div>
+                                <div class="stat-item"><span>SPD</span><span>${stats.speed || 0}</span></div>
+                            </div>
+                            
+                            <div class="moves-compact">
+                                ${(c.moves || []).map(m => `
+                                    <div class="move-row">
+                                        <span>${m.name}</span>
+                                        <span>${m.category}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        });
+
+        function goToBattle() {
+            window.location.href = `/battle/${gameId}`;
+        }
+    </script>
+</body>
+
+</html>

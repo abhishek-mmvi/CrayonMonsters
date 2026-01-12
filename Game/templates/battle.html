@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrayonMonsters - Battle!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: #000;
+            color: #202020;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* Spiral Transition */
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spiral {
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(#000 0deg, #fff 30deg, #000 60deg, #fff 90deg,
+                    #000 120deg, #fff 150deg, #000 180deg, #fff 210deg,
+                    #000 240deg, #fff 270deg, #000 300deg, #fff 330deg);
+            animation: spiralSpin 0.8s linear forwards, spiralShrink 1.5s ease-in forwards;
+        }
+
+        @keyframes spiralSpin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(720deg);
+            }
+        }
+
+        @keyframes spiralShrink {
+            0% {
+                transform: scale(3) rotate(0deg);
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .transition-overlay.hidden {
+            display: none;
+        }
+
+        /* Arena Container - Full Screen */
+        .arena {
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 16/10;
+            background: url('/static/sprites/arena.jpg') center/cover no-repeat;
+            position: relative;
+            border: 6px solid #404040;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Top Bar - Overlaid */
+        .top-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 10;
+        }
+
+        .team-panel {
+            background: rgba(248, 248, 248, 0.95);
+            border: 4px solid #404040;
+            padding: 10px;
+        }
+
+        .team-label {
+            font-size: 8px;
+            margin-bottom: 6px;
+        }
+
+        .team-status {
+            display: flex;
+            gap: 6px;
+        }
+
+        .creature-icon {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 25%, #48dbfb 50%, #ff9ff3 75%, #54a0ff 100%);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        .creature-icon.fainted {
+            filter: grayscale(100%);
+            opacity: 0.3;
+        }
+
+        /* Opponent Info Box */
+        .opponent-box {
+            position: absolute;
+            top: 60px;
+            left: 20px;
+            background: rgba(248, 248, 248, 0.95);
+            border: 4px solid #404040;
+            padding: 12px 16px;
+            min-width: 200px;
+            z-index: 10;
+        }
+
+        /* Player Info Box */
+        .player-box {
+            position: absolute;
+            bottom: 140px;
+            right: 20px;
+            background: rgba(248, 248, 248, 0.95);
+            border: 4px solid #404040;
+            padding: 12px 16px;
+            min-width: 220px;
+            z-index: 10;
+        }
+
+        .creature-name {
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .hp-label {
+            font-size: 8px;
+            margin-bottom: 4px;
+        }
+
+        .hp-bar-outer {
+            height: 10px;
+            background: #404040;
+            border: 2px solid #202020;
+        }
+
+        .hp-bar-inner {
+            height: 100%;
+            background: #40c040;
+            transition: width 0.5s;
+        }
+
+        .hp-bar-inner.medium {
+            background: #c0c040;
+        }
+
+        .hp-bar-inner.low {
+            background: #c04040;
+        }
+
+        .hp-text {
+            font-size: 9px;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        /* Creature Sprites */
+        .opponent-sprite {
+            position: absolute;
+            top: 80px;
+            right: 80px;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .opponent-sprite img {
+            max-width: 100%;
+            max-height: 100%;
+            transform: scaleX(-1);
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        .player-sprite {
+            position: absolute;
+            bottom: 130px;
+            left: 60px;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .player-sprite img {
+            max-width: 100%;
+            max-height: 100%;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+        }
+
+        /* Shake Animations */
+        @keyframes shakeAttackRight {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(20px);
+            }
+
+            75% {
+                transform: translateX(-5px);
+            }
+        }
+
+        @keyframes shakeAttackLeft {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-20px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        @keyframes shakeHit {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-10px);
+            }
+
+            40% {
+                transform: translateX(10px);
+            }
+
+            60% {
+                transform: translateX(-6px);
+            }
+
+            80% {
+                transform: translateX(6px);
+            }
+        }
+
+        .attacking-right {
+            animation: shakeAttackRight 0.3s ease-out;
+        }
+
+        .attacking-left {
+            animation: shakeAttackLeft 0.3s ease-out;
+        }
+
+        .hit {
+            animation: shakeHit 0.4s ease-out;
+        }
+
+        /* Bottom Panel - Overlaid on Arena */
+        .bottom-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .battle-log {
+            flex: 1;
+            background: rgba(248, 248, 248, 0.95);
+            border: 4px solid #404040;
+            padding: 10px;
+            font-size: 9px;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .moves-panel {
+            width: 280px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            background: rgba(248, 248, 248, 0.95);
+            border: 4px solid #404040;
+            padding: 8px;
+        }
+
+        .move-btn {
+            background: #fff;
+            border: 3px solid #404040;
+            padding: 10px 6px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.1s;
+        }
+
+        .move-btn:hover {
+            background: #e0e0e0;
+            transform: scale(1.02);
+        }
+
+        .move-btn:active {
+            background: #c0c0c0;
+        }
+
+        .move-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .waiting-msg {
+            grid-column: span 2;
+            text-align: center;
+            padding: 20px;
+            font-size: 9px;
+        }
+
+        /* Stats Button */
+        .stats-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(48, 96, 160, 0.9);
+            color: #fff;
+            border: 3px solid #404040;
+            padding: 8px 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            z-index: 20;
+        }
+
+        /* Stats Popup */
+        .stats-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #f8f8f8;
+            border: 4px solid #404040;
+            padding: 20px;
+            z-index: 1000;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .stats-popup.show {
+            display: block;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+            display: none;
+        }
+
+        .popup-overlay.show {
+            display: block;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #c04040;
+            color: #fff;
+            border: 2px solid #404040;
+            padding: 6px 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px;
+            cursor: pointer;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 9px;
+        }
+
+        .move-detail {
+            background: #e8e8e8;
+            border: 2px solid #404040;
+            padding: 8px;
+            margin-bottom: 6px;
+            font-size: 8px;
+        }
+
+        /* Victory Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.hidden {
+            display: none;
+        }
+
+        .modal {
+            background: #f8f8f8;
+            border: 6px solid #404040;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .modal h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .modal button {
+            background: #3060a0;
+            color: #fff;
+            border: 4px solid #404040;
+            padding: 14px 28px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Spiral Transition -->
+    <div class="transition-overlay" id="transitionOverlay">
+        <div class="spiral"></div>
+    </div>
+
+    <!-- Arena -->
+    <div class="arena">
+        <!-- Top Team Bars -->
+        <div class="top-bar">
+            <div class="team-panel">
+                <div class="team-label">YOUR TEAM</div>
+                <div class="team-status" id="myTeamBar"></div>
+            </div>
+            <div class="team-panel">
+                <div class="team-label">OPPONENT</div>
+                <div class="team-status" id="oppTeamBar"></div>
+            </div>
+        </div>
+
+        <!-- Opponent -->
+        <div class="opponent-box">
+            <div class="creature-name" id="oppName">???</div>
+            <div class="hp-label">HP</div>
+            <div class="hp-bar-outer">
+                <div class="hp-bar-inner" id="oppHpBar" style="width: 100%;"></div>
+            </div>
+            <div class="hp-text" id="oppHpText">???/???</div>
+        </div>
+        <div class="opponent-sprite" id="oppSprite">
+            <span style="font-size: 48px; color: #fff;">?</span>
+        </div>
+
+        <!-- Player -->
+        <div class="player-sprite" id="playerSprite">
+            <span style="font-size: 48px; color: #fff;">?</span>
+        </div>
+        <div class="player-box">
+            <div class="creature-name" id="playerName">???</div>
+            <div class="hp-label">HP</div>
+            <div class="hp-bar-outer">
+                <div class="hp-bar-inner" id="playerHpBar" style="width: 100%;"></div>
+            </div>
+            <div class="hp-text" id="playerHpText">???/???</div>
+        </div>
+
+        <!-- Bottom Panel -->
+        <div class="bottom-panel">
+            <div class="battle-log" id="battleLog">Battle started!</div>
+            <div class="moves-panel" id="movesPanel"></div>
+        </div>
+
+        <!-- Stats Button -->
+        <button class="stats-btn" onclick="toggleStats()">INFO</button>
+    </div>
+
+    <!-- Stats Popup -->
+    <div class="popup-overlay" id="popupOverlay" onclick="toggleStats()"></div>
+    <div class="stats-popup" id="statsPopup">
+        <button class="close-btn" onclick="toggleStats()">X</button>
+        <h3 style="margin-bottom:12px;font-size:11px;">CREATURE INFO</h3>
+        <div id="statsContent"></div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div class="modal-overlay hidden" id="victoryModal">
+        <div class="modal">
+            <h2 id="victoryText">VICTORY!</h2>
+            <p id="victoryMessage"></p>
+            <button onclick="backToLobby()">BACK TO LOBBY</button>
+        </div>
+    </div>
+
+    <!-- Audio -->
+    <audio id="bgMusic" loop></audio>
+    <audio id="sfxHit" src="{{ url_for('static', filename='sounds/HIT.mp3') }}"></audio>
+    <audio id="sfxVictory" src="{{ url_for('static', filename='sounds/VICTORY.mp3') }}"></audio>
+    <audio id="sfxLose" src="{{ url_for('static', filename='sounds/LOSE.mp3') }}"></audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const gameId = "{{ game_id }}";
+        const socket = io();
+        let currentState = null;
+        let myCreatureData = null;
+
+        const bgMusic = document.getElementById('bgMusic');
+        const sfxHit = document.getElementById('sfxHit');
+        const sfxVictory = document.getElementById('sfxVictory');
+        const sfxLose = document.getElementById('sfxLose');
+
+        const battleTracks = [
+            "{{ url_for('static', filename='sounds/BATTLE1.mp3') }}",
+            "{{ url_for('static', filename='sounds/BATTLE2.mp3') }}",
+            "{{ url_for('static', filename='sounds/BATTLE3.mp3') }}"
+        ];
+
+        function startBattleMusic() {
+            const track = battleTracks[Math.floor(Math.random() * battleTracks.length)];
+            bgMusic.src = track;
+            bgMusic.volume = 0.5;
+            bgMusic.play().catch(() => {
+                // Browser blocked autoplay - start on first click
+                document.addEventListener('click', function playOnClick() {
+                    bgMusic.play();
+                    document.removeEventListener('click', playOnClick);
+                }, { once: true });
+            });
+        }
+
+        // Start music immediately when page loads (during spiral)
+        startBattleMusic();
+
+        // Hide transition after animation
+        setTimeout(() => {
+            document.getElementById('transitionOverlay').classList.add('hidden');
+        }, 1500);
+
+        socket.on('connect', () => {
+            socket.emit('join_game', { game_id: gameId });
+            socket.emit('get_battle_state', { game_id: gameId });
+        });
+
+        socket.on('battle_state', (state) => {
+            currentState = state;
+            updateUI(state);
+        });
+
+        socket.on('turn_result', (data) => {
+            data.events.forEach((event, i) => {
+                setTimeout(() => {
+                    addLogEntry(event.message);
+                    playEventAnimation(event);
+                }, i * 600);
+            });
+            setTimeout(() => {
+                socket.emit('get_battle_state', { game_id: gameId });
+            }, data.events.length * 600 + 300);
+        });
+
+        socket.on('waiting_for_opponent', () => {
+            document.getElementById('movesPanel').innerHTML =
+                '<div class="waiting-msg">Waiting for opponent...</div>';
+        });
+
+        socket.on('switch_complete', () => {
+            socket.emit('get_battle_state', { game_id: gameId });
+        });
+
+        socket.on('battle_ended', (data) => {
+            bgMusic.pause();
+            const isWinner = data.winner === "{{ session.get('username', '') }}";
+            if (isWinner) {
+                sfxVictory.play().catch(() => { });
+                document.getElementById('victoryText').textContent = 'VICTORY!';
+                document.getElementById('victoryMessage').textContent = 'You won the battle!';
+            } else {
+                sfxLose.play().catch(() => { });
+                document.getElementById('victoryText').textContent = 'DEFEAT...';
+                document.getElementById('victoryMessage').textContent = 'You lost the battle.';
+            }
+            document.getElementById('victoryModal').classList.remove('hidden');
+        });
+
+        function playEventAnimation(event) {
+            if (event.type === 'damage' || event.type === 'stun' || event.type === 'debuff') {
+                sfxHit.currentTime = 0;
+                sfxHit.play().catch(() => { });
+                const isPlayerAttacking = event.player === "{{ session.get('username', '') }}";
+                const attackerEl = isPlayerAttacking ?
+                    document.getElementById('playerSprite') : document.getElementById('oppSprite');
+                const defenderEl = isPlayerAttacking ?
+                    document.getElementById('oppSprite') : document.getElementById('playerSprite');
+                attackerEl.classList.add(isPlayerAttacking ? 'attacking-right' : 'attacking-left');
+                setTimeout(() => {
+                    attackerEl.classList.remove('attacking-right', 'attacking-left');
+                    defenderEl.classList.add('hit');
+                    setTimeout(() => defenderEl.classList.remove('hit'), 400);
+                }, 300);
+            }
+        }
+
+        function updateUI(state) {
+            const my = state.my_creature;
+            if (my) {
+                myCreatureData = my;
+                document.getElementById('playerName').textContent = my.name;
+                document.getElementById('playerHpText').textContent = `${my.current_hp}/${my.max_hp}`;
+                const hpPercent = (my.current_hp / my.max_hp) * 100;
+                const hpBar = document.getElementById('playerHpBar');
+                hpBar.style.width = hpPercent + '%';
+                hpBar.className = 'hp-bar-inner' + (hpPercent <= 25 ? ' low' : hpPercent <= 50 ? ' medium' : '');
+
+                const sprite = document.getElementById('playerSprite');
+                if (my.original_image) {
+                    sprite.innerHTML = `<img src="${my.original_image}" alt="${my.name}">`;
+                } else {
+                    sprite.innerHTML = `<span style="font-size:48px;color:#fff">${my.name.charAt(0)}</span>`;
+                }
+
+                const movesPanel = document.getElementById('movesPanel');
+                if (state.needs_switch) {
+                    const myTeam = state.my_team || [];
+                    movesPanel.innerHTML = '<div style="grid-column:span 2;font-size:8px;text-align:center;padding:4px;">SWITCH TO:</div>' +
+                        myTeam.map((c, i) => `
+                            <button class="move-btn" onclick="switchCreature(${i})" ${!c.is_alive ? 'disabled' : ''}>
+                                ${c.name}<br><span style="font-size:7px;">${c.is_alive ? c.current_hp + ' HP' : 'KO'}</span>
+                            </button>
+                        `).join('');
+                } else if (!state.waiting_for_opponent && my.moves) {
+                    movesPanel.innerHTML = my.moves.map((m, i) => `
+                        <button class="move-btn" onclick="selectMove(${i})">${m.name}</button>
+                    `).join('');
+                }
+            }
+
+            const opp = state.opponent_creature;
+            if (opp) {
+                document.getElementById('oppName').textContent = opp.name;
+                document.getElementById('oppHpText').textContent = `${opp.current_hp}/${opp.max_hp}`;
+                const hpPercent = (opp.current_hp / opp.max_hp) * 100;
+                const hpBar = document.getElementById('oppHpBar');
+                hpBar.style.width = hpPercent + '%';
+                hpBar.className = 'hp-bar-inner' + (hpPercent <= 25 ? ' low' : hpPercent <= 50 ? ' medium' : '');
+                const sprite = document.getElementById('oppSprite');
+                if (opp.original_image) {
+                    sprite.innerHTML = `<img src="${opp.original_image}" alt="${opp.name}">`;
+                }
+            }
+
+            const myTeam = state.my_team || [];
+            document.getElementById('myTeamBar').innerHTML = myTeam.map(c =>
+                `<div class="creature-icon ${c.is_alive ? '' : 'fainted'}"></div>`
+            ).join('');
+
+            const oppTeam = state.opponent_team_status || [];
+            document.getElementById('oppTeamBar').innerHTML = oppTeam.map(c =>
+                `<div class="creature-icon ${c.is_alive ? '' : 'fainted'}"></div>`
+            ).join('');
+        }
+
+        function selectMove(index) {
+            socket.emit('select_move', { move_index: index });
+            document.getElementById('movesPanel').innerHTML = '<div class="waiting-msg">Waiting...</div>';
+        }
+
+        function switchCreature(index) {
+            socket.emit('switch_creature', { index: index });
+            document.getElementById('movesPanel').innerHTML = '<div class="waiting-msg">Switching...</div>';
+        }
+
+        function addLogEntry(message) {
+            const log = document.getElementById('battleLog');
+            log.innerHTML += `<div>${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function toggleStats() {
+            document.getElementById('statsPopup').classList.toggle('show');
+            document.getElementById('popupOverlay').classList.toggle('show');
+            if (document.getElementById('statsPopup').classList.contains('show') && myCreatureData) {
+                const c = myCreatureData;
+                let html = `
+                    <div class="stat-row"><span>HP</span><span>${c.current_hp}/${c.max_hp}</span></div>
+                    <div class="stat-row"><span>ATK</span><span>${c.attack}</span></div>
+                    <div class="stat-row"><span>DEF</span><span>${c.defense}</span></div>
+                    <div class="stat-row"><span>SPD</span><span>${c.speed}</span></div>
+                    <div class="stat-row"><span>TYPE</span><span>${(c.nature || '').toUpperCase()}</span></div>
+                    <h4 style="margin:12px 0 8px;font-size:9px;">MOVES</h4>
+                `;
+                c.moves.forEach(m => {
+                    const ed = m.effect_data || {};
+                    let info = m.category.toUpperCase();
+                    if (m.effect_type === 'damage') info += ` | PWR:${ed.power}`;
+                    if (m.effect_type === 'stat_boost') info += ` | +${ed.percent}% ${ed.target_stat}`;
+                    if (m.effect_type === 'stat_debuff') info += ` | -${ed.percent}% ${ed.target_stat}`;
+                    html += `<div class="move-detail"><b>${m.name}</b><br>${info}</div>`;
+                });
+                document.getElementById('statsContent').innerHTML = html;
+            }
+        }
+
+        function backToLobby() { window.location.href = '/lobby'; }
+    </script>
+</body>
+
+</html>

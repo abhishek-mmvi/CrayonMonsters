@@ -1,0 +1,68 @@
+CRAYON MONSTERS — PROJECT STATUS REPORT
+=======================================
+Date: Jan 2026
+
+1. PROJECT OVERVIEW
+-------------------
+CrayonMonsters is a turn-based PvP game where players draw their own characters. 
+The core mechanic is "Creation via Drawing":
+1. Player draws a doodle.
+2. AI identifies the doodle (e.g., "Dragon").
+3. System assigns stats/abilities based on the drawing quality.
+4. Players battle using these generated entities.
+
+2. COMPLETED WORK (LAYER 1: VISUAL PERCEPTION)
+----------------------------------------------
+We have fully implemented the "Eye" of the system. It can see a drawing and understand what it is.
+
+A. The AI Model (doodle_model.h5)
+   - Architecture: Convolutional Neural Network (CNN).
+   - Input: 28x28 Grayscale images.
+   - Output: Probability distribution over ~60 categories (Dragon, Sword, Bridge, etc.).
+   - Training Data: Google Quick, Draw! dataset (white strokes on black background).
+
+B. The Dataset Pipeline
+   - Implemented a robust pipeline to download, process, and normalize thousands of drawings.
+   - Saved as `dataset.npz` (Training/Validation split).
+   - Proven reusable: We can add new categories by simply updating `categories.txt` and re-running the script.
+
+C. The "Smart" Inference Engine
+   - Problem: Users draw on large, white screens (1440p), but the model expects tiny, black 28px squares.
+   - Solution: We built a robust preprocessing pipeline in Python that acts as a translator.
+     1. Auto-Crop: Finds the drawing on the huge canvas.
+     2. Auto-Contrast: Detects faint pencil lines and boosts them to full visibility.
+     3. Inversion: Flips Black-on-White (Paper) to White-on-Black (AI Vision).
+   - Result: The model works reliably even with thin lines or large empty spaces.
+
+D. The Drawing UI (Draw Test)
+   - A local Web Application (Flask + HTML5 Canvas).
+   - Provides a "Perfect" drawing environment with optimized brush sizes (15px) to match the model's training data.
+   - Gives instant feedback/predictions.
+
+3. CURRENT STATUS
+-----------------
+- The project files have been reorganized into the `ImagePredictor/` folder.
+- Redundant data files have been identified for deletion to save space.
+- The system is online and runnable via `python3 draw_test/backend.py`.
+
+4. PENDING WORK (LAYER 2: GAMEPLAY LOGIC)
+-------------------------------------------
+This is the next phase. We need to turn the "Label" into "Game Stats".
+
+A. Attribute Configuration (Planned)
+   - Design `attributes.json` to define base stats for every creature.
+   - Example: Dragon = High Attack, Fire Type. Bridge = High Defense, Structure Type.
+
+B. The "Quality = Power" Engine (Planned)
+   - Use the AI's "Confidence Score" as a gameplay mechanic.
+   - 99% Confidence ("Perfect Drawing") -> Stat Boosts.
+   - 40% Confidence ("Messy Drawing") -> Stat Penalties or Random Mutations.
+
+C. Stat Generator Module (Planned)
+   - A Python class `StatGenerator` to perform this math.
+   - This will connect the AI backend to the future Game Frontend.
+
+5. SUMMARY
+----------
+We have successfully built the "Brain" that sees. 
+We are now ready to build the "Heart" that gives stats and abilities.

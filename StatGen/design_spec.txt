@@ -1,0 +1,253 @@
+CREATURE ATTRIBUTES & MOVE GENERATION SYSTEM
+
+(Pokémon-like, LLM-assisted, engine-validated)
+
+ 1.⁠ ⁠Core Design Goals
+
+Creatures are generated from hand-drawn characters.
+
+An LLM invents stats, move names, move effects, and descriptions.
+
+The engine enforces rules, order, balance, and legality.
+
+Combat is turn-based and Pokémon-like.
+
+The system must scale to thousands of creatures.
+
+ 2.⁠ ⁠Creature Stat System (Fixed & Minimal)
+
+Each creature has exactly five stats.
+
+Authoritative Stat List
+
+hp — health pool
+
+attack — scales damage
+
+defense — reduces damage
+
+speed — determines move order
+
+nature — elemental classification (non-numeric)
+
+Only these five may exist.
+
+ 3.⁠ ⁠Nature System (Elemental)
+
+Nature defines elemental identity, not personality.
+
+Allowed Natures
+
+normal
+
+fire
+
+water
+
+electric
+
+earth
+
+air
+
+ice
+
+poison
+
+metal
+
+dark
+
+light
+
+Nature Rules
+
+Nature affects move flavor and bias.
+
+Nature does not directly modify stats or turn order.
+
+Normal is non-elemental and neutral.
+
+ 4.⁠ ⁠Move System Overview
+
+Each creature has exactly four moves.
+
+Move Categories
+
+Active — offensive or control
+
+Passive — self-enhancing
+
+Mandatory Rules
+
+At least one active move per creature.
+
+Any mix of active/passive is allowed.
+
+Total moves must equal four.
+
+ 5.⁠ ⁠Active Moves
+
+Active moves affect the opponent.
+
+Allowed Active Effects
+
+Damage — raw numerical damage
+
+Stat Debuff — small % reduction to attack, defense, or speed
+
+Skip Turn — chance-based loss of next turn
+
+Restrictions
+
+One effect per move only.
+
+Damage cannot be combined with debuffs or skip.
+
+Values are bounded and small.
+
+ 6.⁠ ⁠Passive Moves
+
+Passive moves affect only the user.
+
+Allowed Passive Effects
+
+Percentage-based boosts to:
+
+hp
+
+attack
+
+defense
+
+speed
+
+Restrictions
+
+No damage, debuffs, or control.
+
+One stat per passive move.
+
+Boosts are small and capped.
+
+ 7.⁠ ⁠Turn Resolution Order (FINAL & CORRECT)
+
+Turn order is determined in two stages.
+
+Stage 1: Move Category Priority
+
+Active moves always have higher priority than passive moves.
+
+If one creature uses an active move and the other uses a passive move,
+→ the active move resolves first, regardless of speed.
+
+Stage 2: Speed Comparison
+
+If both creatures use active moves:
+
+The creature with higher speed acts first.
+
+If both creatures use passive moves:
+
+The creature with higher speed acts first.
+
+Tie-breaking
+
+If speed is equal:
+
+Engine resolves order randomly or via deterministic tie-break rules.
+
+ 8.⁠ ⁠Combat Consequences of This Order
+
+Speed is always relevant.
+
+Passive buffs cannot block or preempt attacks.
+
+Active control and damage remain threatening.
+
+Passive play is a long-term investment.
+
+No move can “jump the queue” unfairly.
+
+This mirrors Pokémon intuition while adding clarity.
+
+ 9.⁠ ⁠Elemental Consistency Rules
+
+Move names, descriptions, and effects must align with nature.
+
+Normal nature moves are non-elemental.
+
+Elemental creatures should not generate off-theme moves.
+
+Elemental bias examples:
+
+Fire → attack pressure
+
+Ice → speed debuffs
+
+Electric → skip-turn bias
+
+Poison → hp reduction
+
+Earth / Metal → defense manipulation
+
+Normal → reliability and consistency
+
+These are thematic biases, not mechanical bonuses.
+
+10.⁠ ⁠Authority & Validation Model
+LLM Responsibilities
+
+Creative generation
+
+Thematic consistency
+
+Variation
+
+Engine Responsibilities
+
+Stat bounds
+
+Move legality
+
+Priority & speed resolution
+
+Probability caps
+
+Regeneration of invalid outputs
+
+The engine is always final.
+
+11.⁠ ⁠Scalability & Future Expansion
+
+The system supports:
+
+Massive procedural generation
+
+Centralized balance tuning
+
+Later addition of:
+
+Type effectiveness
+
+Status durations
+
+Evolutions
+
+PvP modes
+
+Rarity tiers
+
+No core rewrite required.
+
+12.⁠ ⁠Final Design Philosophy
+
+Priority before speed
+
+Speed within category
+
+Creativity without chaos
+
+Rules without ambiguity
+
+Normal nature is deliberate

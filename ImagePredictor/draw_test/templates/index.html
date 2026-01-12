@@ -1,49 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrayonMonsters Draw Test</title>
+    <title>CrayonMonsters — Draw & Battle</title>
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --card-bg: #2d2d2d;
-            --text-color: #ffffff;
-            --accent-color: #646cff;
-            --accent-hover: #535bf2;
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --card-inner: #252525;
+            --text: #ffffff;
+            --text-dim: #888888;
+            --accent: #646cff;
+            --accent2: #ff6b6b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .container {
-            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 450px 1fr;
             gap: 2rem;
-            align-items: flex-start;
         }
 
-        .canvas-card {
-            background: var(--card-bg);
-            padding: 2rem;
+        .panel {
+            background: var(--card);
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-            text-align: center;
+            padding: 1.5rem;
         }
 
         canvas {
-            background-color: white;
-            border-radius: 4px;
+            background: white;
+            border-radius: 8px;
             cursor: crosshair;
-            touch-action: none; /* Prevent scrolling on mobile */
+            touch-action: none;
+            display: block;
+            margin: 0 auto;
         }
 
         .controls {
@@ -54,87 +70,232 @@
         }
 
         button {
-            background-color: var(--card-bg);
-            border: 1px solid var(--accent-color);
-            color: var(--accent-color);
-            padding: 0.6em 1.2em;
-            font-size: 1em;
-            font-weight: 500;
-            font-family: inherit;
-            cursor: pointer;
-            transition: border-color 0.25s;
+            padding: 0.75rem 1.5rem;
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
             border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
         button:hover {
-            border-color: var(--accent-hover);
-            background-color: rgba(100, 108, 255, 0.1);
+            background: rgba(100, 108, 255, 0.1);
         }
 
         button.primary {
-            background-color: var(--accent-color);
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border: none;
             color: white;
-        }
-
-        button.primary:hover {
-            background-color: var(--accent-hover);
-        }
-
-        .results-card {
-            background: var(--card-bg);
-            padding: 2rem;
-            border-radius: 12px;
-            min-width: 250px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-        }
-
-        h1, h2, h3 {
-            margin-top: 0;
-        }
-
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            padding: 0.5rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 4px;
-        }
-
-        .result-bar {
-            height: 4px;
-            background: var(--accent-color);
-            border-radius: 2px;
-            margin-bottom: 1rem;
-        }
-
-        .top-result {
-            font-size: 2rem;
             font-weight: bold;
-            color: var(--accent-color);
-            margin-bottom: 1rem;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hint {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        /* Prediction Section */
+        .prediction-box {
+            background: var(--card-inner);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .prediction-label {
+            font-size: 2.5rem;
+            font-weight: bold;
             text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .prediction-confidence {
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        /* Creature Stats */
+        .creature-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .stats-box,
+        .moves-box {
+            background: var(--card-inner);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .stats-box h3,
+        .moves-box h3 {
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .nature-badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+
+        .stat-label {
+            width: 70px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .stat-bar-container {
+            flex: 1;
+            height: 16px;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 8px;
+        }
+
+        .stat-bar {
+            height: 100%;
+            border-radius: 8px;
+            transition: width 0.5s;
+        }
+
+        .stat-value {
+            width: 35px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Moves */
+        .move-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid var(--accent);
+        }
+
+        .move-card.passive {
+            border-left-color: #666;
+        }
+
+        .move-name {
+            font-weight: bold;
+        }
+
+        .move-meta {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-dim);
+        }
+
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .placeholder {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 3rem;
+        }
+
+        .warnings {
+            grid-column: 1 / -1;
+            background: #332200;
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .warnings h4 {
+            color: #ffaa00;
+            margin-bottom: 0.5rem;
+        }
+
+        .warnings ul {
+            margin-left: 1.5rem;
+            color: #cc8800;
         }
     </style>
 </head>
+
 <body>
-    <h1>CrayonMonsters Test</h1>
-    
+    <h1>🖍️ CrayonMonsters — Draw Your Monster!</h1>
+
     <div class="container">
-        <div class="canvas-card">
+        <div class="panel">
             <canvas id="drawingCanvas" width="400" height="400"></canvas>
             <div class="controls">
                 <button onclick="clearCanvas()">Clear</button>
-                <button class="primary" onclick="predict()">Check it!</button>
+                <button class="primary" onclick="predictWithStats()">🎲 Generate Monster!</button>
             </div>
-            <p style="color: #888; font-size: 0.8rem; margin-top: 10px;">Draw Black on White (Simulating Paper)</p>
+            <p class="hint">Draw your creature, then click Generate to bring it to life!</p>
         </div>
 
-        <div class="results-card">
-            <h2>Prediction</h2>
-            <div id="topResult" class="top-result">?</div>
-            <div id="resultsList">
-                <!-- Results go here -->
+        <div class="panel">
+            <div id="loading" class="loading" style="display:none;">
+                <div class="spinner"></div>
+                <p>Drawing coming to life...</p>
+            </div>
+
+            <div id="placeholder" class="placeholder">
+                <p style="font-size: 1.5rem;">🎨</p>
+                <p>Draw something and click Generate!</p>
+            </div>
+
+            <div id="result" style="display:none;">
+                <div class="prediction-box">
+                    <div id="predictionLabel" class="prediction-label">?</div>
+                    <div id="predictionConfidence" class="prediction-confidence"></div>
+                </div>
+
+                <div id="creatureSection" class="creature-section">
+                    <!-- Stats and Moves go here -->
+                </div>
             </div>
         </div>
     </div>
@@ -142,10 +303,7 @@
     <script>
         const canvas = document.getElementById('drawingCanvas');
         const ctx = canvas.getContext('2d');
-        const topResult = document.getElementById('topResult');
-        const resultsList = document.getElementById('resultsList');
 
-        // Config
         ctx.lineWidth = 15;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -153,96 +311,129 @@
 
         let isDrawing = false;
 
-        // Mouse Events
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseout', stopDrawing);
 
-        // Touch Events
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            startDrawing(e.touches[0]);
-        });
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            draw(e.touches[0]);
-        });
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrawing(e.touches[0]); });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0]); });
         canvas.addEventListener('touchend', stopDrawing);
 
-        function startDrawing(e) {
-            isDrawing = true;
-            draw(e); // Draw single dot
-        }
+        function startDrawing(e) { isDrawing = true; draw(e); }
 
         function draw(e) {
             if (!isDrawing) return;
-
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            ctx.lineTo(x, y);
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
         }
 
-        function stopDrawing() {
-            isDrawing = false;
-            ctx.beginPath();
-            // Optional: Auto-predict on mouse up?
-            // predict(); 
-        }
+        function stopDrawing() { isDrawing = false; ctx.beginPath(); }
 
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            topResult.textContent = "?";
-            resultsList.innerHTML = "";
             ctx.beginPath();
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('placeholder').style.display = 'block';
         }
 
-        async function predict() {
+        const natureColors = {
+            fire: '#ff6b35', water: '#4dabf7', electric: '#ffd43b',
+            earth: '#8b4513', air: '#a0c4ff', ice: '#74c0fc',
+            poison: '#9c36b5', metal: '#868e96', dark: '#495057',
+            light: '#ffd700', normal: '#adb5bd'
+        };
+
+        async function predictWithStats() {
             const dataUrl = canvas.toDataURL('image/png');
-            
-            topResult.innerText = "Thinking...";
-            
+            const loading = document.getElementById('loading');
+            const placeholder = document.getElementById('placeholder');
+            const result = document.getElementById('result');
+
+            loading.style.display = 'block';
+            placeholder.style.display = 'none';
+            result.style.display = 'none';
+
             try {
-                const response = await fetch('/predict', {
+                const response = await fetch('/predict_with_stats', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: dataUrl })
                 });
 
                 const data = await response.json();
-                
-                if (data.predictions) {
-                    displayResults(data.predictions);
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    placeholder.style.display = 'block';
                 } else {
-                    topResult.innerText = "Error";
+                    displayFullResult(data);
+                    result.style.display = 'block';
                 }
             } catch (err) {
-                console.error(err);
-                topResult.innerText = "Error";
+                alert('Error: ' + err.message);
+                placeholder.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
             }
         }
 
-        function displayResults(predictions) {
-            const top = predictions[0];
-            topResult.innerText = top.label;
-            
-            resultsList.innerHTML = predictions.map(p => `
-                <div>
-                    <div class="result-item">
-                        <span>${p.label}</span>
-                        <span>${(p.confidence * 100).toFixed(1)}%</span>
-                    </div>
-                    <div class="result-bar" style="width: ${p.confidence * 100}%"></div>
+        function displayFullResult(data) {
+            const pred = data.prediction;
+            document.getElementById('predictionLabel').textContent = pred.label;
+            document.getElementById('predictionConfidence').textContent =
+                `Confidence: ${(pred.confidence * 100).toFixed(1)}%`;
+
+            const section = document.getElementById('creatureSection');
+
+            if (!data.creature) {
+                section.innerHTML = `<p style="grid-column:1/-1; color:#888;">Stats not available</p>`;
+                return;
+            }
+
+            const c = data.creature;
+            const stats = c.stats;
+            const nature = stats.nature;
+            const color = natureColors[nature] || natureColors.normal;
+
+            function statBar(val, col) {
+                const pct = (val / 255) * 100;
+                return `<div class="stat-bar-container"><div class="stat-bar" style="width:${pct}%;background:${col}"></div></div><div class="stat-value">${val}</div>`;
+            }
+
+            let html = `
+                <div class="stats-box">
+                    <h3>📊 ${c.name}</h3>
+                    <span class="nature-badge" style="background:${color}">${nature}</span>
+                    <div class="stat-row"><span class="stat-label">HP</span>${statBar(stats.hp, '#2ecc71')}</div>
+                    <div class="stat-row"><span class="stat-label">Attack</span>${statBar(stats.attack, '#e74c3c')}</div>
+                    <div class="stat-row"><span class="stat-label">Defense</span>${statBar(stats.defense, '#3498db')}</div>
+                    <div class="stat-row"><span class="stat-label">Speed</span>${statBar(stats.speed, '#f39c12')}</div>
                 </div>
-            `).join('');
+                <div class="moves-box">
+                    <h3>⚔️ Moves</h3>
+                    ${c.moves.map(m => {
+                const ed = m.effect_data || {};
+                let meta = `${m.category} • ${m.effect_type}`;
+                if (m.effect_type === 'damage') meta += ` • Power: ${ed.power || '?'}`;
+                if (m.effect_type === 'stat_boost') meta += ` • +${ed.percent || '?'}% ${ed.target_stat || ''}`;
+                if (m.effect_type === 'stat_debuff') meta += ` • -${ed.percent || '?'}% ${ed.target_stat || ''}`;
+                meta += ` • Acc: ${m.accuracy}%`;
+                return `<div class="move-card ${m.category}"><div class="move-name">${m.name}</div><div class="move-meta">${meta}</div></div>`;
+            }).join('')}
+                </div>
+            `;
+
+            if (data.warnings && data.warnings.length > 0) {
+                html += `<div class="warnings"><h4>⚠️ Engine Fixes</h4><ul>${data.warnings.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
+            }
+
+            section.innerHTML = html;
         }
     </script>
 </body>
+
 </html>

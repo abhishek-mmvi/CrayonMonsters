@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrayonMonsters - Draw Your Team!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .drawing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .drawing-slot {
+            text-align: center;
+        }
+
+        .drawing-slot canvas {
+            width: 200px;
+            height: 200px;
+        }
+
+        .slot-controls {
+            margin-top: 8px;
+        }
+
+        .slot-status {
+            font-size: 8px;
+            margin-top: 4px;
+        }
+
+        .slot-status.done {
+            color: var(--hp-green);
+        }
+
+        @media (max-width: 768px) {
+            .drawing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .drawing-slot canvas {
+                width: 280px;
+                height: 280px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Draw Your Team!</h1>
+
+        <div class="panel pixel-border text-center">
+            <div class="timer" id="timer">3:00</div>
+            <p style="font-size: 10px;">Draw {{ creatures_count }} creatures before time runs out!</p>
+        </div>
+
+        <div class="drawing-grid">
+            {% for i in range(creatures_count) %}
+            <div class="drawing-slot panel pixel-border">
+                <p class="mb-1">Creature {{ i + 1 }}</p>
+                <canvas id="canvas{{ i }}" width="200" height="200"></canvas>
+                <div class="slot-controls">
+                    <button class="btn" onclick="clearCanvas({{ i }})">Clear</button>
+                </div>
+                <p class="slot-status" id="status{{ i }}">Draw something!</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center">
+            <button class="btn btn-primary" id="submitBtn" onclick="submitDrawings()"
+                style="font-size: 14px; padding: 16px 32px;">
+                Submit Team!
+            </button>
+        </div>
+    </div>
+
+    <!-- Processing Modal -->
+    <div id="processingModal" class="modal-overlay" style="display: none;">
+        <div class="modal pixel-border">
+            <h2>Processing...</h2>
+            <p>AI is analyzing your drawings...</p>
+            <p class="mt-1" style="font-size: 10px;">Generating stats & moves...</p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const gameId = "{{ game_id }}";
+        const creaturesCount = {{ creatures_count }};
+        const drawTime = {{ draw_time }};
+        const socket = io();
+
+        // Canvas setup
+        const canvases = [];
+        const contexts = [];
+        const hasDrawing = [];
+
+        for (let i = 0; i < creaturesCount; i++) {
+            const canvas = document.getElementById(`canvas${i}`);
+            const ctx = canvas.getContext('2d');
+
+            // Fill white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'black';
+
+            canvases.push(canvas);
+            contexts.push(ctx);
+            hasDrawing.push(false);
+
+            // Drawing events
+            let drawing = false;
+
+            canvas.addEventListener('mousedown', (e) => {
+                drawing = true;
+                draw(i, e);
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (drawing) draw(i, e);
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                drawing = false;
+                ctx.beginPath();
+            });
+
+            canvas.addEventListener('mouseout', () => {
+                drawing = false;
+                ctx.beginPath();
+            });
+
+            // Touch events
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                drawing = true;
+                drawTouch(i, e);
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (drawing) drawTouch(i, e);
+            });
+
+            canvas.addEventListener('touchend', () => {
+                drawing = false;
+                ctx.beginPath();
+            });
+        }
+
+        function draw(idx, e) {
+            const canvas = canvases[idx];
+            const ctx = contexts[idx];
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+
+            if (!hasDrawing[idx]) {
+                hasDrawing[idx] = true;
+                document.getElementById(`status${idx}`).textContent = 'Drawing...';
+                document.getElementById(`status${idx}`).className = 'slot-status';
+            }
+        }
+
+        function drawTouch(idx, e) {
+            const touch = e.touches[0];
+            draw(idx, { clientX: touch.clientX, clientY: touch.clientY });
+        }
+
+        function clearCanvas(idx) {
+            const canvas = canvases[idx];
+            const ctx = contexts[idx];
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            hasDrawing[idx] = false;
+            document.getElementById(`status${idx}`).textContent = 'Draw something!';
+            document.getElementById(`status${idx}`).className = 'slot-status';
+        }
+
+        // Timer
+        let timeLeft = drawTime;
+        const timerEl = document.getElementById('timer');
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+            if (timeLeft <= 30) {
+                timerEl.className = 'timer danger';
+            } else if (timeLeft <= 60) {
+                timerEl.className = 'timer warning';
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                submitDrawings();
+            }
+        }, 1000);
+
+        // Socket
+        socket.on('connect', () => {
+            socket.emit('join_game', { game_id: gameId });
+        });
+
+        socket.on('creatures_ready', (data) => {
+            console.log('Creatures ready:', data.creatures);
+        });
+
+        socket.on('go_to_battle', (data) => {
+            window.location.href = `/team/${data.game_id}`;
+        });
+
+        function submitDrawings() {
+            clearInterval(timerInterval);
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('processingModal').style.display = 'flex';
+
+            const drawings = [];
+            for (let i = 0; i < creaturesCount; i++) {
+                drawings.push(canvases[i].toDataURL('image/png'));
+            }
+
+            socket.emit('submit_drawings', { drawings });
+        }
+    </script>
+</body>
+
+</html>

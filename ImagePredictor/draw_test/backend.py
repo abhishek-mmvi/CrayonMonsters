@@ -7,8 +7,19 @@ import tensorflow as tf
 from PIL import Image, ImageOps
 from flask import Flask, render_template, request, jsonify
 
-# Add parent directory to path to import modules if needed
+# Add parent directories to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add StatGen to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'StatGen')))
+
+try:
+    from llm_client import generate_creature_stats
+    from stat_engine import validate_creature
+    STATGEN_AVAILABLE = True
+    print("StatGen modules loaded.")
+except ImportError as e:
+    print(f"StatGen not available: {e}")
+    STATGEN_AVAILABLE = False
 
 app = Flask(__name__)
 
@@ -107,6 +118,60 @@ def predict():
             })
             
         return jsonify({'predictions': results})
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/predict_with_stats', methods=['POST'])
+def predict_with_stats():
+    """
+    Combined endpoint: Predict creature type AND generate stats.
+    """
+    try:
+        # Get base64 image from JSON
+        data = request.json['image']
+        if "base64," in data:
+            data = data.split("base64,")[1]
+            
+        image_bytes = base64.b64decode(data)
+        input_tensor = smart_preprocess(image_bytes)
+        
+        if input_tensor is None:
+            return jsonify({'error': 'Failed to process image'}), 400
+            
+        preds = model.predict(input_tensor, verbose=0)[0]
+        
+        # Get top prediction
+        top_idx = preds.argmax()
+        top_label = label_map[top_idx]
+        top_confidence = float(preds[top_idx])
+        
+        # Generate stats if StatGen is available
+        if STATGEN_AVAILABLE:
+            raw_creature = generate_creature_stats(top_label, top_confidence)
+            if "error" not in raw_creature:
+                validated_creature, warnings = validate_creature(raw_creature)
+                return jsonify({
+                    'prediction': {
+                        'label': top_label,
+                        'confidence': top_confidence
+                    },
+                    'creature': validated_creature,
+                    'warnings': warnings
+                })
+            else:
+                return jsonify({
+                    'prediction': {'label': top_label, 'confidence': top_confidence},
+                    'error': f"StatGen error: {raw_creature['error']}"
+                }), 500
+        else:
+            return jsonify({
+                'prediction': {'label': top_label, 'confidence': top_confidence},
+                'creature': None,
+                'message': 'StatGen not available'
+            })
         
     except Exception as e:
         print(f"Error: {e}")

@@ -1,0 +1,95 @@
+{
+  "stats": {
+    "hp": { "min": 0, "max": 255 },
+    "attack": { "min": 0, "max": 255 },
+    "defense": { "min": 0, "max": 255 },
+    "speed": { "min": 0, "max": 255 },
+    "nature": [
+      "normal",
+      "fire",
+      "water",
+      "electric",
+      "earth",
+      "air",
+      "ice",
+      "poison",
+      "metal",
+      "dark",
+      "light"
+    ]
+  },
+
+  "moves": {
+    "total": 4,
+    "min_active": 1,
+
+    "categories": {
+      "active": {
+        "priority": "higher_than_passive",
+        "speed_matters": true,
+
+        "effects": {
+          "damage": {
+            "power_range": [1, 255],
+            "accuracy_range": [1, 100]
+          },
+          "stat_debuff": {
+            "stats": ["attack", "defense", "speed"],
+            "percent_range": [1, 20],
+            "accuracy_range": [1, 100]
+          },
+          "skip_turn": {
+            "chance_range": [1, 30],
+            "accuracy_range": [1, 100]
+          }
+        },
+
+        "constraints": [
+          "one_effect_only",
+          "no_damage_with_other_effects"
+        ]
+      },
+
+      "passive": {
+        "priority": "lower_than_active",
+        "speed_matters": true,
+
+        "effects": {
+          "stat_boost": {
+            "stats": ["hp", "attack", "defense", "speed"],
+            "percent_range": [1, 20]
+          }
+        },
+
+        "constraints": [
+          "no_damage",
+          "no_debuffs",
+          "one_stat_only"
+        ]
+      }
+    }
+  },
+
+  "resolution_rules": {
+    "priority_order": ["active", "passive"],
+    "within_same_category": "higher_speed_first",
+    "speed_tie": "random"
+  },
+
+  "theming": {
+    "nature_consistency_required": true,
+    "normal_is_non_elemental": true
+  },
+
+  "output_format": {
+    "stats": ["hp", "attack", "defense", "speed", "nature"],
+    "moves": [
+      "name",
+      "category",
+      "effect_type",
+      "effect_data",
+      "accuracy",
+      "description"
+    ]
+  }
+}

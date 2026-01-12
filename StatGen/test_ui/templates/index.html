@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrayonMonsters StatGen Test</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --card-inner: #252525;
+            --text: #ffffff;
+            --text-dim: #888888;
+            --accent: #ff6b6b;
+            --accent2: #4ecdc4;
+            --fire: #ff6b35;
+            --water: #4dabf7;
+            --electric: #ffd43b;
+            --earth: #8b4513;
+            --air: #a0c4ff;
+            --ice: #74c0fc;
+            --poison: #9c36b5;
+            --metal: #868e96;
+            --dark: #495057;
+            --light: #ffd700;
+            --normal: #adb5bd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+            color: white;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Creature Card */
+        .creature-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .creature-header {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .creature-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .nature-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            background: var(--card-inner);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .stats-section h3 {
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-label {
+            width: 80px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .stat-bar-container {
+            flex: 1;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+
+        .stat-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .stat-value {
+            width: 40px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        /* Moves Section */
+        .moves-section {
+            background: var(--card-inner);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .moves-section h3 {
+            margin-bottom: 1rem;
+            color: var(--accent2);
+        }
+
+        .move-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--accent);
+        }
+
+        .move-card.passive {
+            border-left-color: var(--text-dim);
+        }
+
+        .move-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .move-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .move-tags {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .move-tag {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .tag-active {
+            background: var(--accent);
+        }
+
+        .tag-passive {
+            background: #444;
+        }
+
+        .tag-damage {
+            background: #e03131;
+        }
+
+        .tag-debuff {
+            background: #9c36b5;
+        }
+
+        .tag-skip {
+            background: #1971c2;
+        }
+
+        .tag-boost {
+            background: #2f9e44;
+        }
+
+        .move-stats {
+            display: flex;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+
+        .move-stat {
+            color: var(--text-dim);
+        }
+
+        .move-stat span {
+            color: var(--text);
+            font-weight: bold;
+        }
+
+        .move-desc {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        /* Warnings */
+        .warnings {
+            grid-column: 1 / -1;
+            padding: 1rem;
+            background: #332200;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .warnings h4 {
+            color: #ffaa00;
+            margin-bottom: 0.5rem;
+        }
+
+        .warnings ul {
+            margin-left: 1.5rem;
+            color: #cc8800;
+        }
+
+        /* Raw JSON */
+        .raw-json {
+            grid-column: 1 / -1;
+            background: var(--card-inner);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .raw-json summary {
+            cursor: pointer;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .raw-json pre {
+            background: #111;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            max-height: 300px;
+        }
+
+        /* Loading */
+        #loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-dim);
+        }
+
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #placeholder {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 3rem;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🖍️ CrayonMonsters StatGen Test</h1>
+
+    <div class="container">
+        <div class="panel">
+            <h2 style="margin-bottom: 1rem;">Generate Creature</h2>
+            <div class="input-group">
+                <label>Creature Type</label>
+                <input type="text" id="creatureLabel" placeholder="e.g. dragon, bridge, sword" value="dragon">
+            </div>
+            <div class="input-group">
+                <label>Drawing Confidence: <span id="confidenceValue">0.85</span></label>
+                <input type="range" id="confidence" min="0" max="100" value="85">
+            </div>
+            <button id="generateBtn" onclick="generate()">🎲 Generate Creature</button>
+
+            <hr style="margin: 2rem 0; border-color: #333;">
+
+            <div style="font-size: 0.85rem; color: var(--text-dim);">
+                <p><strong>How it works:</strong></p>
+                <p>1. Enter a creature type</p>
+                <p>2. Set confidence (affects stats)</p>
+                <p>3. LLM generates stats + moves</p>
+                <p>4. Engine validates & fixes</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div id="loading" style="display:none;">
+                <div class="spinner"></div>
+                <p>Summoning creature from the void...</p>
+            </div>
+            <div id="placeholder">
+                <p style="font-size: 1.2rem;">🎨 Enter a creature type and click Generate</p>
+            </div>
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const confidenceSlider = document.getElementById('confidence');
+        const confidenceValue = document.getElementById('confidenceValue');
+        
+        confidenceSlider.oninput = () => {
+            confidenceValue.textContent = (confidenceSlider.value / 100).toFixed(2);
+        };
+        
+        const natureColors = {
+            fire: '#ff6b35',
+            water: '#4dabf7',
+            electric: '#ffd43b',
+            earth: '#8b4513',
+            air: '#a0c4ff',
+            ice: '#74c0fc',
+            poison: '#9c36b5',
+            metal: '#868e96',
+            dark: '#495057',
+            light: '#ffd700',
+            normal: '#adb5bd'
+        };
+        
+        async function generate() {
+            const label = document.getElementById('creatureLabel').value.trim();
+            const confidence = confidenceSlider.value / 100;
+            const btn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const placeholder = document.getElementById('placeholder');
+            
+            if (!label) {
+                alert('Please enter a creature type');
+                return;
+            }
+            
+            btn.disabled = true;
+            loading.style.display = 'block';
+            placeholder.style.display = 'none';
+            result.innerHTML = '';
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ label, confidence })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    result.innerHTML = `<p style="color:red; padding: 2rem;">Error: ${data.error}</p>`;
+                } else {
+                    displayCreature(data.creature, data.warnings, data.raw_llm_output);
+                }
+            } catch (err) {
+                result.innerHTML = `<p style="color:red; padding: 2rem;">Error: ${err.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+        function displayCreature(creature, warnings, rawOutput) {
+            const result = document.getElementById('result');
+            const stats = creature.stats;
+            const nature = stats.nature;
+            const natureColor = natureColors[nature] || natureColors.normal;
+            
+            // Build stat bars
+            function statBar(value, color) {
+                const percent = (value / 255) * 100;
+                return `
+                    <div class="stat-bar-container">
+                        <div class="stat-bar" style="width: ${percent}%; background: ${color};"></div>
+                    </div>
+                    <div class="stat-value">${value}</div>
+                `;
+            }
+            
+            // Build move cards
+            function moveCard(move) {
+                const isActive = move.category === 'active';
+                const effectType = move.effect_type;
+                
+                let effectDetails = '';
+                const ed = move.effect_data || {};
+                
+                if (effectType === 'damage') {
+                    effectDetails = `<span class="move-stat">Power: <span>${ed.power || '?'}</span></span>`;
+                } else if (effectType === 'stat_debuff') {
+                    effectDetails = `<span class="move-stat">Target: <span>${ed.target_stat || '?'}</span></span>
+                                     <span class="move-stat">Reduce: <span>${ed.percent || '?'}%</span></span>`;
+                } else if (effectType === 'skip_turn') {
+                    effectDetails = `<span class="move-stat">Chance: <span>${ed.chance || '?'}%</span></span>`;
+                } else if (effectType === 'stat_boost') {
+                    effectDetails = `<span class="move-stat">Boost: <span>${ed.target_stat || '?'}</span></span>
+                                     <span class="move-stat">Amount: <span>+${ed.percent || '?'}%</span></span>`;
+                }
+                
+                return `
+                    <div class="move-card ${move.category}">
+                        <div class="move-header">
+                            <span class="move-name">${move.name}</span>
+                            <div class="move-tags">
+                                <span class="move-tag tag-${move.category}">${move.category}</span>
+                                <span class="move-tag tag-${effectType.replace('_', '')}">${effectType.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+                        <div class="move-stats">
+                            ${effectDetails}
+                            <span class="move-stat">Accuracy: <span>${move.accuracy}%</span></span>
+                        </div>
+                        <div class="move-desc">"${move.description}"</div>
+                    </div>
+                `;
+            }
+            
+            let html = `
+                <div class="creature-card">
+                    <div class="creature-header">
+                        <div class="creature-name">${creature.name}</div>
+                        <span class="nature-badge" style="background: ${natureColor}; color: ${nature === 'light' || nature === 'electric' ? '#000' : '#fff'};">
+                            ${nature}
+                        </span>
+                    </div>
+                    
+                    <div class="stats-section">
+                        <h3>📊 Stats</h3>
+                        <div class="stat-row">
+                            <span class="stat-label">HP</span>
+                            ${statBar(stats.hp, '#2ecc71')}
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Attack</span>
+                            ${statBar(stats.attack, '#e74c3c')}
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Defense</span>
+                            ${statBar(stats.defense, '#3498db')}
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Speed</span>
+                            ${statBar(stats.speed, '#f39c12')}
+                        </div>
+                    </div>
+                    
+                    <div class="moves-section">
+                        <h3>⚔️ Moves</h3>
+                        ${creature.moves.map(moveCard).join('')}
+                    </div>
+            `;
+            
+            if (warnings && warnings.length > 0) {
+                html += `
+                    <div class="warnings">
+                        <h4>⚠️ Engine Corrections</h4>
+                        <ul>
+                            ${warnings.map(w => `<li>${w}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            html += `
+                <details class="raw-json">
+                    <summary>🔍 View Raw JSON Output</summary>
+                    <pre>${JSON.stringify(rawOutput, null, 2)}</pre>
+                </details>
+            </div>`;
+            
+            result.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>
